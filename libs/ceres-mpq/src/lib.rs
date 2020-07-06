@@ -1,5 +1,3 @@
-
-
 use std::ffi::{c_void, CString};
 use std::ptr;
 
@@ -117,7 +115,11 @@ impl MPQArchive {
         Ok(MPQArchive { handle })
     }
 
-    pub fn create(path: &str, filecount: usize, use_filelist: bool) -> Result<MPQArchive, GenericError> {
+    pub fn create(
+        path: &str,
+        filecount: usize,
+        use_filelist: bool,
+    ) -> Result<MPQArchive, GenericError> {
         let path = CString::new(path).unwrap();
         let path_ptr = path.as_ptr();
         let mut handle = ptr::null_mut();
@@ -125,40 +127,63 @@ impl MPQArchive {
         let mut flags = 0;
         let dwMpqVersion = (flags & storm::MPQ_CREATE_ARCHIVE_VMASK) >> 24;
         let dwStreamFlags = 0;
-        let mut dwFileFlags1 = if flags & storm::MPQ_CREATE_LISTFILE != 0 { storm::MPQ_FILE_DEFAULT_INTERNAL } else { 0 };
-        let dwFileFlags2 = if flags & storm::MPQ_CREATE_ATTRIBUTES != 0 { storm::MPQ_FILE_DEFAULT_INTERNAL } else { 0 };
-        let dwFileFlags3 = if flags & storm::MPQ_CREATE_SIGNATURE != 0 { storm::MPQ_FILE_DEFAULT_INTERNAL } else { 0 };
-        let mut dwAttrFlags =
-            if flags & storm::MPQ_CREATE_ATTRIBUTES != 0 { storm::MPQ_ATTRIBUTE_CRC32 | storm::MPQ_ATTRIBUTE_FILETIME | storm::MPQ_ATTRIBUTE_MD5 } else { 0 };
-        let dwSectorSize = if dwMpqVersion >= storm::MPQ_FORMAT_VERSION_3 {  0x4000 } else { 0x1000 };
-        let dwRawChunkSize = if dwMpqVersion >= storm::MPQ_FORMAT_VERSION_4 { 0x4000 } else { 0 };
+        let mut dwFileFlags1 = if flags & storm::MPQ_CREATE_LISTFILE != 0 {
+            storm::MPQ_FILE_DEFAULT_INTERNAL
+        } else {
+            0
+        };
+        let dwFileFlags2 = if flags & storm::MPQ_CREATE_ATTRIBUTES != 0 {
+            storm::MPQ_FILE_DEFAULT_INTERNAL
+        } else {
+            0
+        };
+        let dwFileFlags3 = if flags & storm::MPQ_CREATE_SIGNATURE != 0 {
+            storm::MPQ_FILE_DEFAULT_INTERNAL
+        } else {
+            0
+        };
+        let mut dwAttrFlags = if flags & storm::MPQ_CREATE_ATTRIBUTES != 0 {
+            storm::MPQ_ATTRIBUTE_CRC32 | storm::MPQ_ATTRIBUTE_FILETIME | storm::MPQ_ATTRIBUTE_MD5
+        } else {
+            0
+        };
+        let dwSectorSize = if dwMpqVersion >= storm::MPQ_FORMAT_VERSION_3 {
+            0x4000
+        } else {
+            0x1000
+        };
+        let dwRawChunkSize = if dwMpqVersion >= storm::MPQ_FORMAT_VERSION_4 {
+            0x4000
+        } else {
+            0
+        };
         let dwMaxFileCount = filecount;
 
-        if (dwMpqVersion >= storm::MPQ_FORMAT_VERSION_3 && flags & storm::MPQ_CREATE_ATTRIBUTES != 0)
+        if (dwMpqVersion >= storm::MPQ_FORMAT_VERSION_3
+            && flags & storm::MPQ_CREATE_ATTRIBUTES != 0)
         {
             dwAttrFlags |= storm::MPQ_ATTRIBUTE_PATCH_BIT;
         }
 
-        if (use_filelist)
-        {
+        if (use_filelist) {
             dwFileFlags1 = storm::MPQ_FILE_DEFAULT_INTERNAL;
         }
 
         unsafe {
             let cbSize = ::std::mem::size_of::<storm::_SFILE_CREATE_MPQ>() as u32;
 
-            let mut ci = Box::new(storm::_SFILE_CREATE_MPQ{
-                cbSize: cbSize,
-                dwMpqVersion: dwMpqVersion,
+            let mut ci = Box::new(storm::_SFILE_CREATE_MPQ {
+                cbSize,
+                dwMpqVersion,
                 pvUserData: ptr::null_mut(),
                 cbUserData: 0,
-                dwStreamFlags: dwStreamFlags,
-                dwFileFlags1: dwFileFlags1,
-                dwFileFlags2: dwFileFlags2,
-                dwFileFlags3: dwFileFlags3,
-                dwAttrFlags: dwAttrFlags,
-                dwSectorSize: dwSectorSize,
-                dwRawChunkSize: dwRawChunkSize,
+                dwStreamFlags,
+                dwFileFlags1,
+                dwFileFlags2,
+                dwFileFlags3,
+                dwAttrFlags,
+                dwSectorSize,
+                dwRawChunkSize,
                 dwMaxFileCount: dwMaxFileCount as u32,
             });
 
@@ -182,6 +207,19 @@ impl MPQArchive {
         test_for_generic_error()?;
 
         Ok(MPQFile { handle })
+    }
+
+    pub fn get_max_files(&self) -> usize {
+        unsafe {
+            let count = storm::SFileGetMaxFileCount(self.handle);
+            return count as usize;
+        }
+    }
+
+    pub fn set_max_files(&self, count: usize) -> bool {
+        unsafe {
+            return storm::SFileSetMaxFileCount(self.handle, count as u32);
+        }
     }
 
     pub fn write_file(&self, file_name: &str, data: &[u8]) -> Result<(), GenericError> {

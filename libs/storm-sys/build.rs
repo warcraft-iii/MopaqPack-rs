@@ -83,7 +83,9 @@ fn main() {
         .file("StormLib/src/adpcm/adpcm.cpp")
         .file("StormLib/src/sparse/sparse.cpp");
 
-    build.static_flag(true);
+    if !target_triple.contains("windows-msvc") {
+        build.static_flag(true);
+    }
 
     build.compile("storm");
 
@@ -93,6 +95,6 @@ fn main() {
     } else if target_triple.contains("darwin") {
         println!("cargo:rustc-link-lib=dylib=c++");
     } else {
-        println!("cargo:rustc-link-lib=dylib=stdc++");
+        // println!("cargo:rustc-link-lib=dylib=stdc++");
     }
 }
