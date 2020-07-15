@@ -209,6 +209,15 @@ impl MPQArchive {
         Ok(MPQFile { handle })
     }
 
+    pub fn has_file(&self, file_name: &str) -> bool {
+        let file_name = CString::new(file_name).unwrap();
+        let file_name_ptr = file_name.as_ptr();
+
+        unsafe {
+            return storm::SFileHasFile(self.handle, file_name_ptr);
+        }
+    }
+
     pub fn get_max_files(&self) -> usize {
         unsafe {
             let count = storm::SFileGetMaxFileCount(self.handle);

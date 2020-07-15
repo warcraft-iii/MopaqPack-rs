@@ -64,7 +64,6 @@ fn main() -> Result<(), Error> {
                         .short("f")
                         .long("file")
                         .value_name("FILE")
-                        .value_name("FILE")
                         .help("File name which will extract in MPQ")
                         .takes_value(true),
                 ),
@@ -174,8 +173,12 @@ fn exec(files: &FileList, output: &str, filelist: bool) -> Result<bool, Error> {
 
 fn extract(mpq: &str, file: &str, output: &str) -> Result<bool, Error> {
     let ar = mpq::MPQArchive::open(mpq)?;
-    let f = ar.open_file(file)?;
-    fs::write(output, f.read_contents()?)?;
+    let exists = ar.has_file(file);
+    if exists {
+        let f = ar.open_file(file)?;
+        fs::write(output, f.read_contents()?)?;
+    }
+    println!("extract file {}, {}", file, exists);
     Ok(true)
 }
 
