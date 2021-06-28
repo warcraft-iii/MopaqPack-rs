@@ -21,9 +21,14 @@ jobs:
             
       - name: Build
         uses: actions-rs/cargo@v1
-        run: cargo build --verbose
+        with:
+          command: build
+          args: --release --verbose
       
       - name: Run tests
         uses: actions-rs/cargo@v1
-        run: cargo test --verbose
+        with:
+          command: test
+          args: --verbose
+
 
