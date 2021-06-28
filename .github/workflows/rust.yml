@@ -1,0 +1,29 @@
+name: Rust
+
+on: [push]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+    
+      - name: Install latest nightly
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: stable
+            override: true
+            components: rustfmt, clippy
+            
+      - name: Build
+        uses: actions-rs/cargo@v1
+        run: cargo build --verbose
+      
+      - name: Run tests
+        uses: actions-rs/cargo@v1
+        run: cargo test --verbose
+
