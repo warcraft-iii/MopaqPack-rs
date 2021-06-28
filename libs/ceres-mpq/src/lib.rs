@@ -101,13 +101,13 @@ pub struct MPQFile {
 }
 
 impl MPQArchive {
-    pub fn open(path: &str) -> Result<MPQArchive, GenericError> {
+    pub fn open(path: &str, flag: u32) -> Result<MPQArchive, GenericError> {
         let path = CString::new("flat-file://".to_string() + path).unwrap();
         let path_ptr = path.as_ptr();
         let mut handle = ptr::null_mut();
 
         unsafe {
-            storm::SFileOpenArchive(path_ptr, 0, 0, &mut handle);
+            storm::SFileOpenArchive(path_ptr, 0, flag, &mut handle);
         }
 
         test_for_generic_error()?;

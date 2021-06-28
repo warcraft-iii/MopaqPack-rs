@@ -172,7 +172,8 @@ fn exec(files: &FileList, output: &str, filelist: bool) -> Result<bool, Error> {
 }
 
 fn extract(mpq: &str, file: &str, output: &str) -> Result<bool, Error> {
-    let ar = mpq::MPQArchive::open(mpq)?;
+    use storm_sys as storm;
+    let ar = mpq::MPQArchive::open(mpq, storm::MPQ_OPEN_READ_ONLY)?;
     let exists = ar.has_file(file);
     if exists {
         let f = ar.open_file(file)?;
@@ -183,7 +184,7 @@ fn extract(mpq: &str, file: &str, output: &str) -> Result<bool, Error> {
 }
 
 fn pack(mpq: &str, files: &FileList) -> Result<bool, Error> {
-    let ar = mpq::MPQArchive::open(mpq)?;
+    let ar = mpq::MPQArchive::open(mpq, 0)?;
 
     let max = ar.get_max_files();
     ar.set_max_files(files.len() + max);
