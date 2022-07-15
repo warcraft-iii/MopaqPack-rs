@@ -85,6 +85,13 @@ fn main() -> Result<(), Error> {
                         .long("input")
                         .help("Input directory or file list")
                         .takes_value(true),
+                )
+                .arg(
+                    Arg::with_name("remove")
+                        .short("r")
+                        .long("remove")
+                        .help("remove directory or file list")
+                        .takes_value(true),
                 ),
         )
         .get_matches();
@@ -119,6 +126,10 @@ fn run(matches: clap::ArgMatches) -> Result<(), Error> {
     } else if let Some(matches) = matches.subcommand_matches("pack") {
         let mpq = matches.value_of("mpq").unwrap();
         let input = matches.value_of("input").unwrap();
+        if matches.is_present("remove"){
+            let remove = matches.value_of("remove").unwrap();
+            remove_file(mpq, remove)?;
+        }
         let files = generate_file_list(input)?;
         pack(mpq, &files)?;
     } else {
@@ -193,6 +204,19 @@ fn pack(mpq: &str, files: &FileList) -> Result<bool, Error> {
         let data = fs::read(p)?;
         ar.write_file(n, &*data)?;
     }
+    Ok(true)
+}
+
+fn remove_file(mpq: &str, file: &str) -> Result<bool, Error> {
+    let ar = mpq::MPQArchive::open(mpq, 0)?;
+    let spl:Vec<&str> = file.split(";").collect();
+    let max = ar.get_max_files();
+    let len = spl.len();
+    for _f in spl {
+        ar.remove_file(_f);
+        println!("remove file:{}", _f);
+    }
+    ar.set_max_files(max - len);
 
     Ok(true)
 }

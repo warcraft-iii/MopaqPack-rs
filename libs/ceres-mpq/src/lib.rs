@@ -265,6 +265,18 @@ impl MPQArchive {
 
         Ok(())
     }
+
+    pub fn remove_file(&self, file_name: &str) -> bool {
+        let cfile_name = CString::new(file_name).unwrap();
+        let file_name_ptr = cfile_name.as_ptr();
+        unsafe {
+            if self.has_file(file_name){
+                    return storm::SFileRemoveFile(self.handle, file_name_ptr, 0);
+            }else{
+                return false;
+            }
+        }
+    }
 }
 
 impl Drop for MPQArchive {
