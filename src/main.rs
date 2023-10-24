@@ -8,7 +8,12 @@ use std::fs;
 
 use ceres_mpq as mpq;
 
-type FileList = HashMap<String, String>;
+struct File {
+    name: String,
+    path: String,
+}
+
+type FileList = Vec<File>;
 
 fn main() -> Result<(), Error> {
     let matches = App::new("MopaqPack-rs")
@@ -150,10 +155,10 @@ fn generate_file_list(input: &str) -> Result<FileList, Error> {
             .filter_map(Result::ok);
         for img in walker {
             let p = img.path();
-            files.insert(
-                p.strip_prefix(input).unwrap().to_str().unwrap().to_string(),
-                p.to_str().unwrap().to_string(),
-            );
+            files.push(File {
+                name: p.strip_prefix(input).unwrap().to_str().unwrap().to_string(),
+                path: p.to_str().unwrap().to_string(),
+            });
         }
     } else {
         let json = fs::read_to_string(input)?;
@@ -161,7 +166,10 @@ fn generate_file_list(input: &str) -> Result<FileList, Error> {
         let data: Vec<Vec<String>> = serde_json::from_str(json.as_str())?;
 
         for item in data {
-            files.insert(item[0].to_string(), item[1].to_string());
+            files.push(File {
+                name: item[0].to_string(),
+                path: item[1].to_string(),
+            });
         }
     }
 
@@ -174,9 +182,9 @@ fn exec(files: &FileList, output: &str, filelist: bool) -> Result<bool, Error> {
     }
 
     let ar = mpq::MPQArchive::create(output, files.len(), filelist)?;
-    for (n, p) in files {
-        let data = fs::read(p)?;
-        ar.write_file(n, &*data)?;
+    for f in files {
+        let data = fs::read(f.path.as_str())?;
+        ar.write_file(f.name.as_str(), &*data)?;
     }
 
     Ok(true)
@@ -200,9 +208,9 @@ fn pack(mpq: &str, files: &FileList) -> Result<bool, Error> {
     let max = ar.get_max_files();
     ar.set_max_files(files.len() + max);
 
-    for (n, p) in files {
-        let data = fs::read(p)?;
-        ar.write_file(n, &*data)?;
+    for f in files {
+        let data = fs::read(f.path.as_str())?;
+        ar.write_file(f.name.as_str(), &*data)?;
     }
     Ok(true)
 }
