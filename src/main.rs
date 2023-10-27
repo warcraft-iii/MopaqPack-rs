@@ -205,13 +205,11 @@ fn extract(mpq: &str, file: &str, output: &str) -> Result<bool, Error> {
 fn pack(mpq: &str, files: &FileList) -> Result<bool, Error> {
     let ar = mpq::MPQArchive::open(mpq, 0)?;
 
-    let max = ar.get_max_files();
-    ar.set_max_files(files.len() + max);
-
     for f in files {
-        let data = fs::read(f.path.as_str())?;
-        ar.write_file(f.name.as_str(), &*data)?;
+        ar.add_file(f.name.as_str(), f.path.as_str())?;
     }
+
+    ar.compact();
     Ok(true)
 }
 
@@ -225,6 +223,7 @@ fn remove_file(mpq: &str, file: &str) -> Result<bool, Error> {
         println!("remove file:{}", _f);
     }
     ar.set_max_files(max - len);
+    ar.compact();
 
     Ok(true)
 }

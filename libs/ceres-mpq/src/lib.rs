@@ -265,6 +265,25 @@ impl MPQArchive {
 
         Ok(())
     }
+    
+    pub fn add_file(&self, file_name: &str, file_path:&str) -> Result<(), GenericError> {
+
+        self.remove_file(file_name);
+        
+        let file_name = CString::new(file_name).unwrap();
+        let file_name_ptr = file_name.as_ptr();
+        let file_path = CString::new(file_path).unwrap();
+        let file_path_ptr = file_path.as_ptr();
+
+        unsafe {
+            if !storm::SFileAddFileEx(self.handle, file_path_ptr, file_name_ptr, storm::MPQ_FILE_COMPRESS |storm::MPQ_FILE_ENCRYPTED, storm::MPQ_COMPRESSION_ZLIB, storm::MPQ_COMPRESSION_NEXT_SAME)
+            {
+                test_for_generic_error()?;
+            }
+        }
+
+        Ok(())
+    }
 
     pub fn remove_file(&self, file_name: &str) -> bool {
         let cfile_name = CString::new(file_name).unwrap();
@@ -275,6 +294,12 @@ impl MPQArchive {
             }else{
                 return false;
             }
+        }
+    }
+
+    pub fn compact(&self) -> bool {
+        unsafe {
+            return storm::SFileCompactArchive(self.handle, ptr::null_mut(), false);
         }
     }
 }
