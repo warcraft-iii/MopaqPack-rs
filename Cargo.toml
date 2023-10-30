@@ -5,8 +5,8 @@ authors = ["Jai <814683@qq.com>"]
 edition = "2018"
 
 [dependencies]
-ceres-mpq = {path = "libs/ceres-mpq"}
-storm-sys = {path = "libs/storm-sys"}
+stormlib-sys = {path = "crates/stormlib-sys"}
+stormlib = {path = "crates/stormlib"}
 
 failure = "0.1.8"
 clap = "2.33.1"

@@ -2,11 +2,10 @@ extern crate clap;
 use clap::{Arg, App, SubCommand};
 
 use failure::{Error};
+use stormlib::OpenArchiveFlags;
 
 use std::collections::HashMap;
 use std::fs;
-
-use ceres_mpq as mpq;
 
 struct File {
     name: String,
@@ -131,7 +130,7 @@ fn run(matches: clap::ArgMatches) -> Result<(), Error> {
     } else if let Some(matches) = matches.subcommand_matches("pack") {
         let mpq = matches.value_of("mpq").unwrap();
         let input = matches.value_of("input").unwrap();
-        if matches.is_present("remove"){
+        if matches.is_present("remove") {
             let remove = matches.value_of("remove").unwrap();
             remove_file(mpq, remove)?;
         }
@@ -180,8 +179,7 @@ fn exec(files: &FileList, output: &str, filelist: bool) -> Result<bool, Error> {
     if std::path::Path::new(output).is_file() {
         fs::remove_file(output)?;
     }
-
-    let ar = mpq::MPQArchive::create(output, files.len(), filelist)?;
+    let ar = stormlib::Archive::create(output, files.len(), filelist)?;
     for f in files {
         let data = fs::read(f.path.as_str())?;
         ar.write_file(f.name.as_str(), &*data)?;
@@ -191,39 +189,32 @@ fn exec(files: &FileList, output: &str, filelist: bool) -> Result<bool, Error> {
 }
 
 fn extract(mpq: &str, file: &str, output: &str) -> Result<bool, Error> {
-    use storm_sys as storm;
-    let ar = mpq::MPQArchive::open(mpq, storm::MPQ_OPEN_READ_ONLY)?;
-    let exists = ar.has_file(file);
+    let mut ar = stormlib::Archive::open(mpq, OpenArchiveFlags::MPQ_OPEN_READ_ONLY)?;
+    let exists = ar.has_file(file).unwrap();
     if exists {
-        let f = ar.open_file(file)?;
-        fs::write(output, f.read_contents()?)?;
+        let mut f = ar.open_file(file)?;
+        fs::write(output, f.read_all()?)?;
     }
     println!("extract file {}, {}", file, exists);
     Ok(true)
 }
 
 fn pack(mpq: &str, files: &FileList) -> Result<bool, Error> {
-    let ar = mpq::MPQArchive::open(mpq, 0)?;
-
+    let mut ar = stormlib::Archive::open(mpq, OpenArchiveFlags::MPQ_OPEN_NO_FLAG)?;
     for f in files {
         ar.add_file(f.name.as_str(), f.path.as_str())?;
     }
-
-    ar.compact();
+    ar.compact().unwrap();
     Ok(true)
 }
 
 fn remove_file(mpq: &str, file: &str) -> Result<bool, Error> {
-    let ar = mpq::MPQArchive::open(mpq, 0)?;
-    let spl:Vec<&str> = file.split(";").collect();
-    let max = ar.get_max_files();
-    let len = spl.len();
+    let mut ar = stormlib::Archive::open(mpq, OpenArchiveFlags::MPQ_OPEN_NO_FLAG)?;
+    let spl: Vec<&str> = file.split(";").collect();
     for _f in spl {
-        ar.remove_file(_f);
+        ar.remove_file(_f).unwrap();
         println!("remove file:{}", _f);
     }
-    ar.set_max_files(max - len);
-    ar.compact();
-
+    ar.compact().unwrap();
     Ok(true)
 }
