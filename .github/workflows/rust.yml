@@ -7,7 +7,7 @@ env:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: [windows-latest, mac-latest]
 
     steps:
     - uses: actions/checkout@v2
