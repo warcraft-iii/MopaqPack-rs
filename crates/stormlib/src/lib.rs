@@ -223,6 +223,18 @@ impl Archive {
         unsafe_try_call!(SFileCompactArchive(self.handle, ptr::null_mut(), false));
         Ok(())
     }
+
+    pub fn get_max_files(&mut self) -> Result<u32> {
+        unsafe {
+            let count = SFileGetMaxFileCount(self.handle);
+            Ok(count)
+        }
+    }
+
+    pub fn set_max_files(&mut self, count: u32) -> Result<()> {
+        unsafe_try_call!(SFileSetMaxFileCount(self.handle, count));
+        Ok(())
+    }
 }
 
 impl std::ops::Drop for Archive {

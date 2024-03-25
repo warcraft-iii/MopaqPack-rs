@@ -201,6 +201,8 @@ fn extract(mpq: &str, file: &str, output: &str) -> Result<bool, Error> {
 
 fn pack(mpq: &str, files: &FileList) -> Result<bool, Error> {
     let mut ar = stormlib::Archive::open(mpq, OpenArchiveFlags::MPQ_OPEN_NO_FLAG)?;
+    let count = ar.get_max_files().unwrap();
+    ar.set_max_files(count + (files.len() as u32));
     for f in files {
         ar.add_file(f.name.as_str(), f.path.as_str())?;
     }
