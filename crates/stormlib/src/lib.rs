@@ -180,13 +180,7 @@ impl Archive {
 
     pub fn add_file(&mut self, path: &str, local_path: &str) -> Result<()> {
         #[cfg(not(target_os = "windows"))]
-        let clocal_path = {
-            let pathstr = local_path
-                .as_ref()
-                .to_str()
-                .ok_or_else(|| StormError::NonUtf8)?;
-            CString::new(pathstr)?
-        };
+        let clocal_path = CString::new(local_path)?;
         #[cfg(target_os = "windows")]
         let clocal_path = {
             use widestring::U16CString;
