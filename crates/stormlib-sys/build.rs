@@ -32,7 +32,12 @@ fn main() {
   // That's very important and I've wasted an hour finding it >_<
   // source: https://stackoverflow.com/questions/29199107/c-lz-library-link-order-undefined-reference-to-symbol-inflateinit2
   println!("cargo:rustc-link-search=native={}", lib.display());
+
+  #[cfg(target_os = "windows")]
   println!("cargo:rustc-link-lib=static=stormlib");
+
+  #[cfg(not(target_os = "windows"))]
+  println!("cargo:rustc-link-lib=static=storm");
 
   #[cfg(target_os = "windows")]
   {
