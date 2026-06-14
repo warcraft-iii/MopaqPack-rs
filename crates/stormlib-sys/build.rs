@@ -11,6 +11,10 @@ fn main() {
   // Builds StormLib using cmake
   let mut cfg = cmake::Config::new(&stormlib_path);
 
+  // StormLib's CMakeLists.txt has cmake_minimum_required after project(),
+  // which cmake 4.x rejects. This env var suppresses the policy error.
+  cfg.define("CMAKE_POLICY_VERSION_MINIMUM", "3.5");
+
   #[cfg(target_os = "windows")]
   {
     cfg.cxxflag("-D UNICODE")
