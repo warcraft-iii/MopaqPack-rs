@@ -44,6 +44,25 @@ impl Archive {
     }
 
     pub fn create<P: AsRef<Path>>(path: P, filecount: usize, use_filelist: bool) -> Result<Self> {
+        Self::create_internal(path, filecount, use_filelist, None)
+    }
+
+    /// Creates an MPQ archive using the requested sector size.
+    pub fn create_with_sector_size<P: AsRef<Path>>(
+        path: P,
+        filecount: usize,
+        use_filelist: bool,
+        sector_size: u32,
+    ) -> Result<Self> {
+        Self::create_internal(path, filecount, use_filelist, Some(sector_size))
+    }
+
+    fn create_internal<P: AsRef<Path>>(
+        path: P,
+        filecount: usize,
+        use_filelist: bool,
+        sector_size: Option<u32>,
+    ) -> Result<Self> {
         #[cfg(not(target_os = "windows"))]
         let cpath = {
             let pathstr = path.as_ref().to_str().ok_or_else(|| StormError::NonUtf8)?;
@@ -80,11 +99,13 @@ impl Archive {
         } else {
             0
         };
-        let dwSectorSize: u32 = if dwMpqVersion >= MPQ_FORMAT_VERSION_3 {
-            0x4000
-        } else {
-            0x1000
-        };
+        let dwSectorSize = sector_size.unwrap_or_else(|| {
+            if dwMpqVersion >= MPQ_FORMAT_VERSION_3 {
+                0x4000
+            } else {
+                0x1000
+            }
+        });
         let dwRawChunkSize = if dwMpqVersion >= MPQ_FORMAT_VERSION_4 {
             0x4000
         } else {
@@ -303,6 +324,27 @@ impl<'a> std::ops::Drop for File<'a> {
             SFileCloseFile(self.file_handle);
         }
     }
+}
+
+#[test]
+fn test_create_uses_compatible_sector_size_default() {
+    let path =
+        std::env::temp_dir().join(format!("stormlib-default-sector-{}.mpq", std::process::id()));
+    let _ = std::fs::remove_file(&path);
+    drop(Archive::create(&path, 1, false).unwrap());
+    let header = std::fs::read(&path).unwrap();
+    assert_eq!(u16::from_le_bytes([header[14], header[15]]), 3);
+    std::fs::remove_file(path).unwrap();
+}
+
+#[test]
+fn test_create_with_sector_size() {
+    let path = std::env::temp_dir().join(format!("stormlib-sector-{}.mpq", std::process::id()));
+    let _ = std::fs::remove_file(&path);
+    drop(Archive::create_with_sector_size(&path, 1, false, 0x20000).unwrap());
+    let header = std::fs::read(&path).unwrap();
+    assert_eq!(u16::from_le_bytes([header[14], header[15]]), 8);
+    std::fs::remove_file(path).unwrap();
 }
 
 #[test]
